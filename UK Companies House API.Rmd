@@ -1,26 +1,36 @@
 ---
-title: "UK Companies House multiple companies"
+title: "Process Automation - UK Companies House Corporate Data Extraction & Processing"
 author: "Sara Hassani"
-date: "2024-08-24"
 output: html_document
 ---
 
-# Getting Company information using UK Companies House REST API
+# Extracting Company Information using UK Comapnies House API
+
+## USER INPUT :
 
 ```{r}
-library(jsonlite)
-library(httr)
-library(googlesheets4)
-library(shiny)
 
-api_key = ""
-sic = read.csv("SIC07_CH_condensed_list_en.csv") # can download csv file from UK companies House
+project = "chips perfume"
+companies = "stamford brayham limited, crisp finance limited, phenolic limited, gemini maritime limited, perfume idols limited, oneorganic ltd, wrapid packaging ltd, valorem capital one ltd, renaissance 09 ltd, mansion mortgage services limited, dvd-rent.co.uk limited"
+# might not work as well if the company's name has special characteristics 
+# (ex. é, à, ù)
 
 ```
 
-## Core Functions
+## SETUP :
 
 ```{r}
+
+library(jsonlite)
+library(httr)
+library(googlesheets4)
+
+api_key = "a7d9c3b6-267d-4bf5-b070-2c780839d529"
+
+sheet_url <- "https://docs.google.com/spreadsheets/d/1xDYmL5ch-nS3nxSOHbys-CNlL6IMpQde86ZU6JJ9FMQ/edit?gid=929024279#gid=929024279"
+sic = read_sheet(sheet_url) 
+
+# SETTING UP FUNCTIONS
 
 # Function to run search using the company name
 
@@ -37,7 +47,8 @@ company_name_search = function(api_key, company){
   company_name = gsub(" ", "+", company_name)
   
 # extract search pages
-  url = paste0("https://api.company-information.service.gov.uk/search?q=", company_name)
+  url = paste0("https://api.company-information.service.gov.uk/search?q=", 
+               company_name)
   res = VERB("GET", url = url, add_headers(headers))
   response_list = fromJSON(content(res, 'text'), flatten = TRUE)
   response_df = response_list$items
@@ -50,7 +61,9 @@ company_name_search = function(api_key, company){
   company = gsub("\\+", " ", toupper(company_name))
 
   index = which(response_df$title == company)
-  name_number = data.frame(NAME = response_df$title[index], NUMBER = response_df$company_number[index], STATUS = response_df$company_status[index])
+  name_number = data.frame(NAME = response_df$title[index], 
+                           NUMBER = response_df$company_number[index], 
+                           STATUS = response_df$company_status[index])
   ifelse(
     length(index) > 0, 
     return(name_number), 
@@ -67,62 +80,95 @@ company_name_to_number = function(api_key, company_name){
   # vector to store possible variations of the name
   options <- company
 
-  # Check for the presence of abbreviations for company type to look for possible variation of the company name
+  # Check for the presence of abbreviations for company type 
+  # to look for possible variation of the company name
+  
     # Limited Liability Company
   if (grepl("\\bllc\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\bllc\\b", "limited liability company", company, ignore.case = TRUE))
+    options <- c(options, gsub("\\bllc\\b", "limited liability company", 
+                               company, ignore.case = TRUE))
     options <- c(options, gsub("\\bllc\\b", "", company, ignore.case = TRUE))
-  } else if (grepl("\\blimited liability company\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\blimited liability company\\b", "llc", company, ignore.case = TRUE))
-    options <- c(options, gsub("\\blimited liability company\\b", "", company, ignore.case = TRUE))
+  } else if (grepl("\\blimited liability company\\b$", 
+                   company, ignore.case = TRUE)) 
+    {
+    options <- c(options, gsub("\\blimited liability company\\b", "llc", 
+                               company, ignore.case = TRUE))
+    options <- c(options, gsub("\\blimited liability company\\b", "", 
+                               company, ignore.case = TRUE))
   }
     # Limited Partnership
   if (grepl("\\bltd\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\bltd\\b", "limited", company, ignore.case = TRUE))
+    options <- c(options, gsub("\\bltd\\b", "limited", 
+                               company, ignore.case = TRUE))
     options <- c(options, gsub("\\bltd\\b", "", company, ignore.case = TRUE))
     } else if (grepl("\\blimited\\b$", company, ignore.case = TRUE)) {
-      options <- c(options, gsub("\\blimited\\b", "ltd", company, ignore.case = TRUE))
-      options <- c(options, gsub("\\blimited\\b", "", company, ignore.case = TRUE))
+      options <- c(options, gsub("\\blimited\\b", "ltd", 
+                                 company, ignore.case = TRUE))
+      options <- c(options, gsub("\\blimited\\b", "",
+                                 company, ignore.case = TRUE))
     }
     # Corporation
   if (grepl("\\bcorp\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\bcorp\\b", "corporation", company, ignore.case = TRUE))
+    options <- c(options, gsub("\\bcorp\\b", "corporation", 
+                               company, ignore.case = TRUE))
     options <- c(options, gsub("\\bcorp\\b", "", company, ignore.case = TRUE))
-  } else if (grepl("\\bcorporation\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\bcorporation\\b", "corp", company, ignore.case = TRUE))
-    options <- c(options, gsub("\\bcorporation\\b", "", company, ignore.case = TRUE))
+  } else if (grepl("\\bcorporation\\b$", company, ignore.case = TRUE)) 
+    {
+    options <- c(options, gsub("\\bcorporation\\b", "corp", 
+                               company, ignore.case = TRUE))
+    options <- c(options, gsub("\\bcorporation\\b", "", 
+                               company, ignore.case = TRUE))
   }
     # Public Limited Company
   if (grepl("\\bplc\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\bplc\\b", "public limited company", company, ignore.case = TRUE))
+    options <- c(options, gsub("\\bplc\\b", "public limited company", 
+                               company, ignore.case = TRUE))
     options <- c(options, gsub("\\bplc\\b", "", company, ignore.case = TRUE))
-  } else if (grepl("\\bpublic limited company\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\bpublic limited company\\b", "plc", company, ignore.case = TRUE))
-    options <- c(options, gsub("\\bpublic limited company\\b", "", company, ignore.case = TRUE))
+  } else if (grepl("\\bpublic limited company\\b$", 
+                   company, ignore.case = TRUE)) 
+    {
+    options <- c(options, gsub("\\bpublic limited company\\b", "plc", 
+                               company, ignore.case = TRUE))
+    options <- c(options, gsub("\\bpublic limited company\\b", "", 
+                               company, ignore.case = TRUE))
   }
     # Limited Liability Partnership
   if (grepl("\\bllp\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\bllp\\b", "limited liability partnership", company, ignore.case = TRUE))
+    options <- c(options, gsub("\\bllp\\b", "limited liability partnership", 
+                               company, ignore.case = TRUE))
     options <- c(options, gsub("\\bllp\\b", "", company, ignore.case = TRUE))
-  } else if (grepl("\\blimited liability partnership\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\blimited liability partnership\\b", "llp", company, ignore.case = TRUE))
-    options <- c(options, gsub("\\blimited liability partnership\\b", "", company, ignore.case = TRUE))
+  } else if (grepl("\\blimited liability partnership\\b$", 
+                   company, ignore.case = TRUE)) 
+    {
+    options <- c(options, gsub("\\blimited liability partnership\\b", "llp", 
+                               company, ignore.case = TRUE))
+    options <- c(options, gsub("\\blimited liability partnership\\b", "", 
+                               company, ignore.case = TRUE))
   }
     # Limited Partnership
   if (grepl("\\blp\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\blp\\b", "limited partnership", company, ignore.case = TRUE))
+    options <- c(options, gsub("\\blp\\b", "limited partnership", company, 
+                               ignore.case = TRUE))
     options <- c(options, gsub("\\blp\\b", "", company, ignore.case = TRUE))
-  } else if (grepl("\\blimited partnership\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\blimited partnership\\b", "lp", company, ignore.case = TRUE))
-    options <- c(options, gsub("\\blimited partnership\\b", "", company, ignore.case = TRUE))
+  } else if (grepl("\\blimited partnership\\b$", company, ignore.case = TRUE)) 
+    {
+    options <- c(options, gsub("\\blimited partnership\\b", "lp", 
+                               company, ignore.case = TRUE))
+    options <- c(options, gsub("\\blimited partnership\\b", "", 
+                               company, ignore.case = TRUE))
   }
   # Industrial and provident Society
   if (grepl("\\bips\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\bips\\b", "Industrial and Provident Society", company, ignore.case = TRUE))
+    options <- c(options, gsub("\\bips\\b", "Industrial and Provident Society", 
+                               company, ignore.case = TRUE))
     options <- c(options, gsub("\\bips\\b", "", company, ignore.case = TRUE))
-  } else if (grepl("\\bIndustrial and Provident Society\\b$", company, ignore.case = TRUE)) {
-    options <- c(options, gsub("\\bIndustrial and Provident Society\\b", "ips", company, ignore.case = TRUE))
-    options <- c(options, gsub("\\bIndustrial and Provident Society\\b", "", company, ignore.case = TRUE))
+  } else if (grepl("\\bIndustrial and Provident Society\\b$", company, 
+                   ignore.case = TRUE)) 
+    {
+    options <- c(options, gsub("\\bIndustrial and Provident Society\\b", "ips", 
+                               company, ignore.case = TRUE))
+    options <- c(options, gsub("\\bIndustrial and Provident Society\\b", "", 
+                               company, ignore.case = TRUE))
   }
 
   # Ensure unique options
@@ -147,134 +193,15 @@ company_name_to_number = function(api_key, company_name){
   
 }
 
-# Function to extract general company information from the company number
-
-general_info = function(api_key, company_number, sic){
-  
-    headers = c(
-     api_key = api_key,
-    'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
-  )
-  url = paste0("https://api.company-information.service.gov.uk/company/", company_number)
-  res <- VERB("GET", url = url, add_headers(headers))
-  response_list <- fromJSON(content(res, 'text'), flatten = TRUE)
-  
-  if ((is.list(response_list) && length(response_list) == 0) || 
-      (is.data.frame(response_list) && nrow(response_list) == 0)) {
-    response_df = data.frame(return = "N/A")
-    return(response_df)
-  }else{
-  
-  # Office Address
-  if("registered_office_address" %in% names(response_list)){
-    office = as.data.frame(t(as.data.frame(response_list$registered_office_address)))
-    rows = 1:nrow(office)
-    entries = office[rows, 1]
-    registered_office = paste(entries, collapse = ", ")
-  }
-  
-  # Industry
-  if("sic_codes" %in% names(response_list)){
-    x = which(response_list$sic_codes == sic$SIC.Code)
-    
-    if(is.integer(x) && length(x) == 0){
-      industry = paste0(response_list$sic_codes, "- no match on concentrated codes list")
-    }else{
-      industry = sic$Description[x]
-    }
-  }else{
-      industry = "N/A"
-  }
-  
-  # Liquidation
-  if("has_been_liquidated" %in% names(response_list)){
-    liquidated = ifelse(response_list$has_been_liquidated == FALSE, "N/A", "Yes")
-  }else{
-      liquidated = "N/A"
-  }
-
-  # Charges
-  if("has_charges" %in% names(response_list)){
-    charges = ifelse(response_list$has_charges == FALSE, "N/A", "Yes")
-  }else{
-      charges = "N/A"
-  }
-  
-  # Insolvency
-  if("has_insolvency_history" %in% names(response_list)){
-    insolvency = ifelse(response_list$has_insolvency_history == FALSE, "N/A", "Yes")
-  }else{
-      insolvency = "N/A"
-  }
-  
-  # Jurisdiction
-  if("jurisdiction" %in% names(response_list)){
-    jurisdiction = response_list$jurisdiction
-  }else{
-      jurisdiction = "N/A"
-  }
- 
-  # Previous names
-    if("previous_company_names" %in% names(response_list)){
-    
-    # Previous Names
-    names = response_list$previous_company_names[, c(3,2,1)]
-    rows = 1:nrow(names)
-    entries = names[rows, 1] 
-    previous_names = paste(entries, collapse = ", ")
-    
-    # Current Name
-    name_dates = as.vector(unlist(names[, c(2,3)]))
-    name_dates = as.Date(name_dates)
-    current_name_date = max(name_dates)
-    
-    }else{
-     previous_names = "N/A"
-     current_name_date = response_list$date_of_creation
-  }
-  
-  # Dissolution date
-  if("date_of_cessation" %in% names(response_list)){
-    dissolution_date =  response_list$date_of_cessation
-    }else{
-     dissolution_date = "N/A"
-    }
-  
-  # Output
-  response_df = data.frame(
-    company_name = response_list$company_name,
-    company_number = response_list$company_number,
-    incorporation_date = response_list$date_of_creation,
-    status = response_list$company_status,
-    dissolution_date = dissolution_date,
-    industry = industry,
-    previous_names = previous_names,
-    date_current_name = current_name_date,
-    jurisdiction = jurisdiction,
-    registered_office = registered_office,
-    liquidated = liquidated,
-    charges = charges,
-    insolvency = insolvency
-  )
-  
-  general = as.data.frame(t(response_df))
-  general <- cbind(RowName = rownames(general), general)
-  rownames(general) <- NULL
-  colnames(general) = NULL
-  
-  return(general)
-  }
-}
-
 # Function to extract company officer information from the company number
-
 officer_info = function(api_key, company_number){
   
  headers = c(
-     api_key = api_key,
-    'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
+  api_key = api_key,
+  'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
   )
-  url = paste0("https://api.company-information.service.gov.uk/company/", company_number, "/officers")
+  url = paste0("https://api.company-information.service.gov.uk/company/", 
+               company_number, "/officers")
   res <- VERB("GET", url = url, add_headers(headers))
   response_list <- fromJSON(content(res, 'text'), flatten = TRUE)
   response_df = response_list$items
@@ -307,7 +234,7 @@ officer_info = function(api_key, company_number){
     response_df$address.locality,
     response_df$address.postal_code
   )
-  combined_rows = apply(address, 1, function(x) paste(x, collapse = ", ")) # need to add way to remove NA before merging
+  combined_rows = apply(address, 1, function(x) paste(x, collapse = ", ")) 
   
   directors$registered_address = combined_rows
   
@@ -316,7 +243,7 @@ officer_info = function(api_key, company_number){
     response_df$date_of_birth.month,
     response_df$date_of_birth.year
   )
-  combined_rows = apply(dob, 1, function(x) paste(x, collapse = "-")) # need to add way to remove NA before merging
+  combined_rows = apply(dob, 1, function(x) paste(x, collapse = "-")) 
   
   directors$dob = combined_rows
   
@@ -326,15 +253,17 @@ officer_info = function(api_key, company_number){
   }
 }
 
-# Function to extract Person with Significant Control information from the company number
+# Function to extract Person with Significant Control information from the 
+# company number
 
 psc_info = function(api_key, company_number){
   
   headers = c(
-     api_key = api_key,
-    'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
+  api_key = api_key,
+  'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
   )
-  url = paste0("https://api.company-information.service.gov.uk/company/", company_number, "/persons-with-significant-control")
+  url = paste0("https://api.company-information.service.gov.uk/company/", 
+               company_number, "/persons-with-significant-control")
   res <- VERB("GET", url = url, add_headers(headers))
   response_list <- fromJSON(content(res, 'text'), flatten = TRUE)
   response_df = response_list$items
@@ -354,14 +283,15 @@ psc_info = function(api_key, company_number){
     response_df$date_of_birth.month,
     response_df$date_of_birth.year
   )
-  combined_rows = apply(dob, 1, function(x) paste(x, collapse = "-")) # need to add way to remove NA before merging
+  combined_rows = apply(dob, 1, function(x) paste(x, collapse = "-")) 
   dob = data.frame(date_of_birth = combined_rows) 
     }else{dob = rep("N/A", nrow(response_df))}
   }else{dob = rep("N/A", nrow(response_df))}
     
   # Control
   if(is.list(response_df$natures_of_control)){
-    control <- sapply(response_df$natures_of_control, function(x) paste(x, collapse = ", '"))
+    control <- sapply(response_df$natures_of_control, 
+                      function(x) paste(x, collapse = ", '"))
   }
   
   # Date of cessation
@@ -415,10 +345,11 @@ psc_info = function(api_key, company_number){
 documents_available = function(api_key, company_number){
   
   headers = c(
-     api_key = api_key,
-    'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
+  api_key = api_key,
+  'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
   )
-  url = paste0("https://api.company-information.service.gov.uk/company/", company_number, "/filing-history")
+  url = paste0("https://api.company-information.service.gov.uk/company/", 
+               company_number, "/filing-history")
   res <- VERB("GET", url = url, add_headers(headers))
   response_list <- fromJSON(content(res, 'text'), flatten = TRUE)
   
@@ -437,13 +368,14 @@ documents_available = function(api_key, company_number){
 
 # Function to extract charges information from the company number
 
-charges = function(api_key, company_number){
+charges_info = function(api_key, company_number){
   
   headers = c(
-     api_key = api_key,
-    'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
+  api_key = api_key,
+  'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
   )
-  url = paste0("https://api.company-information.service.gov.uk/company/", company_number, "/charges")
+  url = paste0("https://api.company-information.service.gov.uk/company/", 
+               company_number, "/charges")
   res <- VERB("GET", url = url, add_headers(headers))
   response_list <- fromJSON(content(res, 'text'), flatten = TRUE)
   
@@ -470,12 +402,14 @@ charges = function(api_key, company_number){
 
 # Function to extract insolvency information from the company number
 
-insolvency = function(api_key, company_number){
+insolvency_info = function(api_key, company_number){
+  
   headers = c(
-     api_key = api_key,
-    'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
+  api_key = api_key,
+  'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
   )
-  url = paste0("https://api.company-information.service.gov.uk/company/", company_number, "/insolvency")
+  url = paste0("https://api.company-information.service.gov.uk/company/", 
+               company_number, "/insolvency")
   res <- VERB("GET", url = url, add_headers(headers))
   response_list <- fromJSON(content(res, 'text'), flatten = TRUE)
   
@@ -525,107 +459,176 @@ insolvency = function(api_key, company_number){
   return(insolvency)
 }
 
-# Function to create data frame with company information, including officer and psc names
+# Function to extract general company information from the company number
 
-info_list = function(api_key, positive, sic){  
+general_info = function(api_key, company_number, sic){
   
-  info_list = data.frame(matrix(ncol = 15, nrow = 0))
-  colnames(info_list) = c("company_name", "company_number", "incorporation date", 
-                        "status", "industry", "dissolution_date", "jurisdiction", 
-                        "registered_office", "previous_names", "date_of_current_name", 
-                        "liquidated", "charges", "insolvency", "officers", "psc")
+  headers = c(
+  api_key = api_key,
+  'Authorization' = 'Basic YTdkOWMzYjYtMjY3ZC00YmY1LWIwNzAtMmM3ODA4MzlkNTI5Og=='
+  )
+  url = paste0("https://api.company-information.service.gov.uk/company/", 
+               company_number)
+  res <- VERB("GET", url = url, add_headers(headers))
+  response_list <- fromJSON(content(res, 'text'), flatten = TRUE)
   
-  x = nrow(positive)
-  api_key = api_key
-  sic = sic
+  if ((is.list(response_list) && length(response_list) == 0) || 
+      (is.data.frame(response_list) && nrow(response_list) == 0)) {
+    response_df = data.frame(return = "N/A")
+    return(response_df)
+  }else{
   
-  # create list with information on each of the matches
-  for(rho in 1:x){
-  
-    company_number = positive$company_number[rho]
-  
-    # Extract all the relevant information
-    company_overview = general_info(api_key, company_number, sic)
-    officers = officer_info(api_key, company_number)
-    psc = psc_info(api_key, company_number)
-  
-    # Enrich company overview
-    a = paste(officers$name, collapse = "; ")
-    b = paste(psc$Name, collapse = "; ")
-  
-    company_overview = as.data.frame(t(company_overview))
-    colnames(company_overview) = company_overview[1,]
-    company_overview = company_overview[-1,]
-  
-    company_overview$officers = a
-    company_overview$psc = b
-  
-    info_list = rbind(info_list, company_overview)
-    
+  # Office Address
+  if("registered_office_address" %in% names(response_list)){
+    office = as.data.frame(t(as.data.frame(
+      response_list$registered_office_address)
+      ))
+    rows = 1:nrow(office)
+    entries = office[rows, 1]
+    registered_office = paste(entries, collapse = ", ")
   }
   
-  return(info_list)
+  # Industry
+  if("sic_codes" %in% names(response_list)){
+    x = which(response_list$sic_codes == sic[,1])
+    if(is.integer(x) && length(x) == 0){
+      industry = paste0(response_list$sic_codes, 
+                        "- no match on concentrated codes list")
+    }else{
+      industry = sic$Description[x]
+    }
+  }else{
+      industry = "N/A"
+  }
   
+  # Liquidation
+  if("has_been_liquidated" %in% names(response_list)){
+    liquidated = ifelse(response_list$has_been_liquidated == FALSE, 
+                        "N/A", "Yes")
+  }else{
+      liquidated = "N/A"
+  }
+
+  # Charges
+  if("has_charges" %in% names(response_list)){
+    charges = ifelse(response_list$has_charges == FALSE, "N/A", "Yes")
+  }else{
+      charges = "N/A"
+  }
+  
+  # Insolvency
+  if("has_insolvency_history" %in% names(response_list)){
+    insolvency = ifelse(response_list$has_insolvency_history == FALSE, 
+                        "N/A", "Yes")
+  }else{
+      insolvency = "N/A"
+  }
+  
+  # Jurisdiction
+  if("jurisdiction" %in% names(response_list)){
+    jurisdiction = response_list$jurisdiction
+  }else{
+      jurisdiction = "N/A"
+  }
+ 
+  # Previous names
+    if("previous_company_names" %in% names(response_list)){
+    
+    # Previous Names
+    names = response_list$previous_company_names[, c(3,2,1)]
+    rows = 1:nrow(names)
+    entries = names[rows, 1] 
+    previous_names = paste(entries, collapse = ", ")
+    
+    # Current Name
+    name_dates = as.vector(unlist(names[, c(2,3)]))
+    name_dates = as.Date(name_dates)
+    current_name_date = max(name_dates)
+    
+    }else{
+     previous_names = "N/A"
+     current_name_date = response_list$date_of_creation
+  }
+  
+  # Dissolution date
+  if("date_of_cessation" %in% names(response_list)){
+    dissolution_date =  response_list$date_of_cessation
+    }else{
+     dissolution_date = "N/A"
+    }
+    
+  # Officers
+    officers = officer_info(api_key, company_number)
+    officers = paste(officers$name, collapse = "; ")
+    
+  # psc
+    psc = psc_info(api_key, company_number)
+    psc = paste(psc$name, collapse = "; ")
+  
+  # Output
+  response_df = data.frame(
+    company_name = response_list$company_name,
+    company_number = response_list$company_number,
+    incorporation_date = response_list$date_of_creation,
+    status = response_list$company_status,
+    dissolution_date = dissolution_date,
+    industry = industry,
+    previous_names = previous_names,
+    date_current_name = current_name_date,
+    jurisdiction = jurisdiction,
+    registered_office = registered_office,
+    liquidated = liquidated,
+    charges = charges,
+    insolvency = insolvency,
+    officers = officers,
+    psc = psc
+  )
+  
+  general = as.data.frame(t(response_df))
+  general <- cbind(RowName = rownames(general), general)
+  rownames(general) <- NULL
+  colnames(general) = NULL
+  
+  return(general)
+  
+  }
 }
 
 ```
 
-# Extracting Company Information using UK Comapnies House API - MULTIPLE COMPANY SEARCH
-
-USER INPUT :
-
-```{r}
-
-project = "chips perfume"
-companies = "company 1, company 2, company 3, company 4, ..." # does not work if the company's name has special characteristics
-
-```
-
-CODE OUTPUT :
+## CODE PROCESS & OUTPUT :
 
 ```{r}
 
 # split the company names
 company_vector <- unlist(strsplit(companies, ", "))
-
 l = length(company_vector)
-project_search = data.frame(matrix(ncol = 16, nrow = 0))
-colnames(project_search) = c("company_name", "company_number", "incorporation date", 
-                      "status", "industry", "dissolution_date", "jurisdiction", 
-                      "registered_office", "previous_names", "date_of_current_name", 
-                      "liquidated", "charges", "insolvency", "officers", "psc", "extracted")
 
+# set up for the project google sheet
+full = as.data.frame(matrix(nrow = 0, ncol = 15))
+colnames(full) = c("company_name", "company_number", "incorporation_date", 
+                   "status", "dissolution_date", "industry", "previous_names", 
+                   "date_current_name", "jurisdiction", "registered_office", 
+                   "liquidated", "charges", "insolvency", "officers", "psc")
+
+# create output
 for(z in 1:l){
   
   company_name = company_vector[z]
   
   # Getting matches for the company number 
   positive = company_name_to_number(api_key, company_name)
-  
   x = nrow(positive)
 
-  if (x == 0) { next }
-  
-  if (x > 1) {
-
-    information = info_list(api_key, positive, sic)
-    information$extracted = rep("N", x)
-    project_search = rbind(project_search, information)
+  if (x == 0) { 
+    next 
+  }else{
     
-    next
-    
-  } # Skipping at this stage, if all works out, can come back to find a way to infuse user input about specific company number 
-  
- 
-  if (x == 1) {
-
-# Extract company information for the project overview
-   information = info_list(api_key, positive, sic)
-   information$extracted = rep("N", x)
-   project_search = rbind(project_search, information)
-    
-# Extract individual sheet per company match
-    company_number = positive$company_number[1]
+    # Creating individual google sheets
+    for(lala in 1:x){
+      
+    # Extract individual sheet per company match
+    company_number = positive$company_number[lala]
 
     # Extract company information 
     company_overview = general_info(api_key, company_number, sic)
@@ -644,7 +647,7 @@ for(z in 1:l){
     gamma = unlist(as.vector(gamma))
     
     if(gamma == "Yes"){
-      charges = charges(api_key, company_number)
+      charges = charges_info(api_key, company_number)
       }else{
         charges = data.frame(charges = "N/A")
       }
@@ -654,14 +657,14 @@ for(z in 1:l){
     gamma = unlist(as.vector(gamma))
     
     if(gamma == "Yes"){
-      insolvency = insolvency(api_key, company_number)
+      insolvency = insolvency_info(api_key, company_number)
       }else{
         insolvency = data.frame(insolvency = "N/A")
       }
-
+    
     # Create Excel Sheet for the company
-    a = positive$company_number[1]
-    b = toupper(positive$company_name[1])
+    a = positive$company_number[lala]
+    b = toupper(positive$company_name[lala])
     sheet_title = paste0(a, "_", b)
     
     # Data
@@ -671,15 +674,27 @@ for(z in 1:l){
                  Charges = charges, 
                  Insolvency = insolvency,
                  Documents = documents)
-
-    # unfortunately there are no options to create a Google sheet directly into a specific folder
+    
+    # unfortunately there are no options to create a Google sheet directly 
+    # into a specific folder
     gs4_create(name = sheet_title, sheets = final)
-
+    
+    # adding to the project overview
+    overview = company_overview
+    overview = as.data.frame(t(overview))
+    colnames(overview) = overview[1,]
+    overview = overview[-1,]
+    
+    full = rbind(full, overview)
+    
+    }
   }
 }
 
-# Extract the information list
+# Extract the project overview
+rownames(full) = NULL
 b = toupper(project)
-gs4_create(name = b, sheets = project_search)
+project_overview = full
+gs4_create(name = b, sheets = project_overview)
 
 ```
