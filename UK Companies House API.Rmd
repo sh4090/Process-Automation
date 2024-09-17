@@ -3,6 +3,7 @@ title: "Process Automation - UK Companies House Corporate Data Extraction & Proc
 author: "Sara Hassani"
 output: html_document
 ---
+The following code aims to automate the data extraction process from UK Companies House. It is also the basis of an R package created from the functions developed in this code. The package is not yet public.
 
 # Extracting Company Information using UK Comapnies House API
 
@@ -11,7 +12,7 @@ output: html_document
 ```{r}
 
 project = "chips perfume"
-companies = "stamford brayham limited, crisp finance limited, phenolic limited, gemini maritime limited, perfume idols limited, oneorganic ltd, wrapid packaging ltd, valorem capital one ltd, renaissance 09 ltd, mansion mortgage services limited, dvd-rent.co.uk limited"
+companies = "stamford brayham limited, phenolic limited, gemini maritime limited, perfume idols limited, oneorganic ltd, wrapid packaging ltd, valorem capital one ltd, renaissance 09 ltd, mansion mortgage services limited"
 # might not work as well if the company's name has special characteristics 
 # (ex. é, à, ù)
 
