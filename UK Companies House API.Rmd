@@ -1,24 +1,32 @@
----
-title: "Process Automation - UK Companies House Corporate Data Extraction & Processing"
-author: "Sara Hassani"
-output: html_document
----
-The following code aims to automate the data extraction process from UK Companies House. It is also the basis of an R package created from the functions developed in this code. The package is not yet public.
 
 # Extracting Company Information using UK Comapnies House API
 
 ## USER INPUT :
+This is the only part that requires user input (aside from the connection to the Google account for the Google Sheet creation.
+The user inputs a name for their project to create a master Google Sheet that includes a summary information on each of the 
+comapnies search for. Then, they input the exact names (NOT case sensitive) for all the companies they would like to search for 
+seperated by ", ". 
 
 ```{r}
 
-project = "chips perfume"
-companies = "stamford brayham limited, phenolic limited, gemini maritime limited, perfume idols limited, oneorganic ltd, wrapid packaging ltd, valorem capital one ltd, renaissance 09 ltd, mansion mortgage services limited"
+project = "project name"
+companies = "company 1 limited, company 2 ltd, company 3 limited liability"
 # might not work as well if the company's name has special characteristics 
 # (ex. é, à, ù)
 
 ```
 
 ## SETUP :
+This portion sets up the functions necessary for the project and is the most important part. These functions are what make up
+the open-source project I created (LINK).
+
+The code includes:
+•	a function to match the company's name to its registration number 
+•	a function to extract the company's core information from its registration number
+•	a function to extract officers' information from its regitration number
+•	a function to extract Persons with Significant Control information from its regitration number
+•	a function to extract details about a company's charges from its regitration number
+•	a function to extract details about a company's insolvency case from its registration number
 
 ```{r}
 
@@ -598,6 +606,9 @@ general_info = function(api_key, company_number, sic){
 ```
 
 ## CODE PROCESS & OUTPUT :
+This portion of the code produces the final output: a Google Sheet with summary information on all the 
+companies for the project, individual Google Sheets with more detailed data under seperate sheets in each 
+document for every company searched for, directly saved onto the user's Google Drive account.
 
 ```{r}
 
