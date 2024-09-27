@@ -35,25 +35,27 @@ to the way the data extracted is then leveraged.
 I created a set of functions encapsulated in a new open-source R package to perform the entire data 
 collection and cleaning workflow (LINK).
 
-Process Automation: Once set up, the system automates data extraction and analysis, requiring minimal human 
-intervention, only the input of company names, allowing for near real-time updates when companies file new 
-documents.
+##### Process Automation: 
+Once set up, the system automates data extraction and analysis, requiring minimal human intervention, 
+only the input of company names, allowing for near real-time updates when companies file new documents.
 
 For my case, I tried to recreate the work I had done for my internship and the code extracted that same 
 information in under 50 seconds, a 99.9% reduction in the time it took me to do it manually.
 
-Data Cleansing & Standardization: The system automatically standardizes company names, deals with variations 
-(e.g., Ltd, LLC) to ensure high match accuracy, and cleans retrieved data for easily analysable output later 
-on.
+##### Data Cleansing & Standardization: 
+The system automatically standardizes company names, deals with variations (e.g., Ltd, LLC) to ensure high 
+match accuracy, and cleans retrieved data for easily analysable output later on.
 
-REST API Wrangling: The system efficiently interacts with external data sources through REST APIs, ensuring 
-smooth retrieval and integration of data.
+##### REST API Wrangling: 
+The system efficiently interacts with external data sources through REST APIs, ensuring smooth retrieval 
+and integration of data.
 
-Text Processing: The project uses advanced text processing techniques to analyze and categorize unstructured 
-data
+##### Text Processing: 
+The project uses advanced text processing techniques to analyze and categorize unstructured data.
 
-Google Sheets Integration: All retrieved data is logged into pre-structured Google Sheets, enabling easy 
-review and collaboration across teams.
+##### Google Sheets Integration: 
+All retrieved data is logged into pre-structured Google Sheets, enabling easy review and collaboration across 
+teams.
 
 ## If I had to develop this project further, I would … 
 Add more conditions to the extraction of certain information. It seems that data from older companies is labeled 
