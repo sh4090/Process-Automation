@@ -31,8 +31,9 @@ assessing corporate financial health, brand risk or conducting competitive analy
 to the way the data extracted is then leveraged.
 
 ## Key Features
-Open-Source R Package: I created a set of functions encapsulated in a new open-source R package to perform 
-the entire data collection and cleaning workflow (LINK).
+##### Open-Source R Package: 
+I created a set of functions encapsulated in a new open-source R package to perform the entire data 
+collection and cleaning workflow (LINK).
 
 Process Automation: Once set up, the system automates data extraction and analysis, requiring minimal human 
 intervention, only the input of company names, allowing for near real-time updates when companies file new 
