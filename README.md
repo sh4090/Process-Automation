@@ -1,4 +1,4 @@
-# End-to-End System/Process Automation: UK Companie House from API to Exploitable Google Sheet
+# Dynamic Shiny Application for Automated Retrieval and Structuring of UK Company Data via Companies House REST API
 This project came about during an internship at an Economic Intelligence firm. I was tasked with 
 mapping out the corporate affiliations of a certain couple and they ended up having over 50 
 affiliated companies in the UK alone, past and present. 
@@ -11,16 +11,13 @@ All I could think was: “I bet I could automate this”...
 And I did.
 
 ## Project Overview
-This project is an end-to-end system designed to automate the process of retrieving, cleaning, and 
+This project is a full-stack dynamic Shiny web app designed to automate the process of retrieving, cleaning, and 
 analysing company information from multiple data sources, such as public APIs and internal databases,
-then produce a comprehensive output in the form a Google Sheets file. It utilizes the UK Companies 
-House REST API to fetch relevant data on companies, including corporate officers, significant 
+then produce a comprehensive output in the form of a summary table in addition to dynamic data visualization tools. 
+It utilizes the UK Companies House REST API to fetch relevant data on companies, including corporate officers, significant 
 controllers, financial filings, and charges. The system is highly scalable, capable of handling 
 multiple companies at once, and it supports error handling for unmatched companies or variations 
 in naming conventions.
-
-I’ve compiled the core functions used in this project in an open-source R package you can download 
-from this link LINK.
 
 ## Applications
 This project has a number of applications, depending on the analysis of the output, which can be 
@@ -31,9 +28,8 @@ assessing corporate financial health, brand risk or conducting competitive analy
 to the way the data extracted is then leveraged.
 
 ## Key Features
-##### Open-Source R Package: 
-I created a set of functions encapsulated in a new open-source R package to perform the entire data 
-collection and cleaning workflow (LINK).
+##### Custom Functions: 
+I developed a suite of purpose-built R functions to support the full data pipeline. These functions handle company name resolution, API querying, nested data extraction (e.g., officers, PSCs, charges), entity-level data cleaning, and output structuring. 
 
 ##### Process Automation: 
 Once set up, the system automates data extraction and analysis, requiring minimal human intervention, 
@@ -51,11 +47,13 @@ The system efficiently interacts with external data sources through REST APIs, e
 and integration of data.
 
 ##### Text Processing: 
-The project uses advanced text processing techniques to analyze and categorize unstructured data.
+The project uses advanced text processing techniques to analyze and categorize semi-structured data.
 
-##### Google Sheets Integration: 
-All retrieved data is logged into pre-structured Google Sheets, enabling easy review and collaboration across 
-teams.
+##### Dynamic Data Handling
+All retrieved data is logged into a pre-structured table labeled "Raw Data", enabling seamless review, export, and further manipulation. The Shiny app's interactive side panel includes custom filtering tools, allowing users to conduct targeted exploratory data analysis directly within the interface.
+
+##### Dynamic Data Visualization
+The application includes built-in visualization components—specifically, pie charts and bar plots—that are automatically generated based on both the full dataset and any applied filters. This enables users to instantly identify patterns, distributions, and anomalies without leaving the app environment.
 
 ## If I had to develop this project further, I would … 
 Add more conditions to the extraction of certain information. It seems that data from older companies is labeled 
