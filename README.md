@@ -1,6 +1,7 @@
 # Dynamic Shiny Application for Automated Retrieval and Structuring of UK Company Data via Companies House REST API
 Website link: https://wqkuks-sara-hassani.shinyapps.io/Dynamic-CompaniesHouse-App/
-Presentation link: 
+
+Presentation link: https://sarahassanicareer.wixsite.com/my-portfolio/post/process-automation-uk-companies-house-api-data-extraction
 
 This project came about during an internship at an Economic Intelligence firm. I was tasked with 
 mapping out the corporate affiliations of a certain couple and they ended up having over 50 
